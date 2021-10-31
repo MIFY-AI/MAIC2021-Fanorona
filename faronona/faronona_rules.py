@@ -95,28 +95,48 @@ class FarononaRules(Rule):
         if action['action_type'] == FarononaActionType.MOVE:
             at = action['action']['at']
             to = action['action']['to']
+            winby = action['winby']
         board.empty_cell(at)
         board.fill_cell(to, Color(player))
 
         approach = FarononaRules.is_win_approach_move(at, to, state, player)
         remote = FarononaRules.is_win_remote_move(at, to, state, player)
-        if approach is not None and len(approach) != 0:
-            state.boring_moves = 0
-            win = True
-            for element in approach:
-                board.empty_cell(element)
-            state.score[player] += len(approach)
-            state.on_board[player*-1] -= len(approach) #modif
-            state.captured = approach
 
-        elif remote is not None and len(remote) != 0:
-            state.boring_moves = 0
-            win = True
-            for element in remote:
-                board.empty_cell(element)
-            state.score[player] += len(remote)
-            state.on_board[player*-1] -= len(remote) #modif
-            state.captured = remote
+        if (approach is not None and len(approach) != 0) and (remote is not None and len(remote) != 0):
+            if winby=="APPROACH":
+                state.boring_moves = 0
+                win = True
+                for element in approach:
+                    board.empty_cell(element)
+                state.score[player] += len(approach)
+                state.on_board[player*-1] -= len(approach) #modif
+                state.captured = approach
+            else:
+                state.boring_moves = 0
+                win = True
+                for element in remote:
+                    board.empty_cell(element)
+                state.score[player] += len(remote)
+                state.on_board[player*-1] -= len(remote) #modif
+                state.captured = remote
+        else:    
+            if approach is not None and len(approach) != 0:
+                state.boring_moves = 0
+                win = True
+                for element in approach:
+                    board.empty_cell(element)
+                state.score[player] += len(approach)
+                state.on_board[player*-1] -= len(approach) #modif
+                state.captured = approach
+
+            elif remote is not None and len(remote) != 0:
+                state.boring_moves = 0
+                win = True
+                for element in remote:
+                    board.empty_cell(element)
+                state.score[player] += len(remote)
+                state.on_board[player*-1] -= len(remote) #modif
+                state.captured = remote
 
         state.boring_moves += 1
         state.set_board(board)     
@@ -126,12 +146,23 @@ class FarononaRules(Rule):
         if win:
             state.set_next_player(player)
             state.winmove = (at,to)
-            state.occuped.append(at)
+            if len(state.occuped) == 0:
+                state.occuped.append(at)
+                state.occupedplayer = player
+            else: 
+                if player == state.occupedplayer:
+                    state.occuped.append(at)
+                else: 
+                    state.occuped = []
+                    state.occuped.append(at)
+                    state.occupedplayer = player
+
         else:
             state.set_next_player(player * -1)
             state.winmove = None
             state.captured = None
             state.occuped = []
+            
 
         done = FarononaRules.is_end_game(state)
         return state, done
@@ -284,11 +315,10 @@ class FarononaRules(Rule):
                 moves = FarononaRules.get_effective_cell_moves(state, to)
                 if moves:
                     for move in moves:
-                        for element in state.occuped:
-                            if move in empty_cells and move != element:
-                                if move[0] != at[0] or move[1] != at[1] or ((move[0] != at[0] + 2 or move[0] != at[0] - 2) and (move[1] != at[1] + 2 or move[1] != at[1] - 2)):
-                                    if (FarononaRules.is_win_approach_move(to, move, state, player) is not None and len(FarononaRules.is_win_approach_move(to, move, state, player)) != 0) or (FarononaRules.is_win_remote_move(to, move, state, player) is not None and len(FarononaRules.is_win_remote_move(to, move, state, player)) != 0):
-                                        actions.append(FarononaAction(action_type=FarononaActionType.MOVE, at=to, to=move))
+                        if move in empty_cells and move not in state.occuped:
+                            if move[0] != at[0] or move[1] != at[1] or ((move[0] != at[0] + 2 or move[0] != at[0] - 2) and (move[1] != at[1] + 2 or move[1] != at[1] - 2)):
+                                if (FarononaRules.is_win_approach_move(to, move, state, player) is not None and len(FarononaRules.is_win_approach_move(to, move, state, player)) != 0) or (FarononaRules.is_win_remote_move(to, move, state, player) is not None and len(FarononaRules.is_win_remote_move(to, move, state, player)) != 0):
+                                    actions.append(FarononaAction(action_type=FarononaActionType.MOVE, at=to, to=move))
                     return actions
         else:
             for piece in player_pieces:

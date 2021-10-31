@@ -34,6 +34,7 @@ class FarononaState(object):  # TODO: Link it to the core state.
         self.captured = None
         self.winmove = None
         self.occuped = []
+        self.occupedplayer = None
 
     def get_board(self):
         return self.board
@@ -69,6 +70,7 @@ class FarononaState(object):  # TODO: Link it to the core state.
                       'next_player': self.get_next_player(),
                       'score': self.score,
                       'on_board': self.on_board,
+                      'captured': self.captured,
                       'rewarding_move': self.rewarding_move,
                       'boring_moves': self.boring_moves,
                       'just_stop': self.just_stop,
